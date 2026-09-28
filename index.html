@@ -117,8 +117,26 @@
   #scLi{flex-direction:column}
   .bh{display:flex;align-items:baseline;gap:1.6cqw;padding-bottom:.9cqw;margin-bottom:1.3cqw;border-bottom:.24cqw solid var(--verde)}
   .bn{font-family:'Archivo',sans-serif;font-weight:900;font-size:1.9cqw;color:var(--verde);letter-spacing:.1em}
-  .bt{font-family:'Archivo',sans-serif;font-weight:900;font-size:3.4cqw;line-height:1;letter-spacing:-.02em}
-  .bo{font-size:1.6cqw;font-weight:500;opacity:.5;margin-left:auto;letter-spacing:.1em;text-transform:uppercase}
+  .bt{font-family:'Archivo',sans-serif;font-weight:900;font-size:3.4cqw;line-height:1;letter-spacing:-.02em;margin-left:auto;text-align:right}
+  /* voltas: mesma letra e cor do nome do bloco, menor (pedido do coach, teste na TV 28/09) */
+  .bv{font-family:'Archivo',sans-serif;font-weight:900;font-size:2.3cqw;line-height:1;letter-spacing:-.01em;margin:-.3cqw 0 .8cqw}
+  .bv:empty{display:none}
+  /* cronometro avulso: cobre a tela, fundo borrado; no play cresce; no stop some */
+  .cron{position:absolute;inset:0;z-index:4;display:none;align-items:center;justify-content:center;
+    background:rgba(20,18,15,.35);backdrop-filter:blur(1.2cqw);-webkit-backdrop-filter:blur(1.2cqw)}
+  #tela.cron-on .cron{display:flex}
+  .cronBox{width:66cqw;padding:2.6cqw 4cqw 3cqw;border-radius:1.6cqw;background:rgba(20,18,15,.92);color:var(--bone);
+    text-align:center;transition:width .25s,background .25s,padding .25s}
+  .cronL{font-size:1.9cqw;font-weight:700;letter-spacing:.3em;text-transform:uppercase;color:#4FC486}
+  .cronD{font-family:'Archivo',sans-serif;font-weight:900;font-size:17cqw;line-height:.9;letter-spacing:-.04em;
+    font-variant-numeric:tabular-nums;margin:1cqw 0 2cqw;transition:font-size .25s}
+  .cronB{display:flex;gap:1.2cqw;justify-content:center}
+  .cronB button{font-size:1.9cqw;padding:1cqw 2.4cqw;color:var(--bone);border-color:rgba(239,233,220,.35)}
+  .cronB button[data-c="play"]{background:var(--verde-ui);border-color:var(--verde-ui);color:#08210F}
+  #tela.cron-run .cronBox{width:94cqw;background:rgba(20,18,15,.96);padding:2cqw 3cqw 2.4cqw}
+  #tela.cron-run .cronD{font-size:27cqw}
+  #tela.cron-run .cronB [data-c="play"],#tela.cron-run .cronB [data-c="fechar"]{display:none}
+  #tela:not(.cron-run) .cronB [data-c="stop"]{display:none}
   .bigL{list-style:none;display:flex;flex-direction:column;justify-content:center;flex:1;gap:.4cqw;min-height:0}
   .bigL{overflow:hidden}
   .bigL.cheia{justify-content:flex-start}
@@ -276,11 +294,23 @@
 <div id="tela" data-tone="dark">
   <div class="paused">Pausado</div>
   <div class="aviso" id="aviso"></div>
+  <div class="cron" id="cron" role="dialog" aria-label="Cronômetro">
+    <div class="cronBox">
+      <div class="cronL">Cronômetro</div>
+      <div class="cronD" id="cronD">00:00</div>
+      <div class="cronB">
+        <button data-c="play">▶ Iniciar</button>
+        <button data-c="stop">■ Parar</button>
+        <button data-c="fechar">✕ Fechar</button>
+      </div>
+    </div>
+  </div>
   <div class="ctrl" id="ctrl" aria-label="Controles da apresentação">
     <button data-a="voltar" aria-label="Voltar">◀ Voltar</button>
     <button data-a="play" aria-label="Começar ou pausar">⏯ Começar / pausar</button>
     <button data-a="avancar" aria-label="Avançar">Avançar ▶</button>
     <button data-a="cheia" aria-label="Tela cheia">⛶ Tela cheia</button>
+    <button data-a="crono" aria-label="Cronômetro">⏱ Cronômetro</button>
     <button data-a="sair" aria-label="Sair para o editor">✕ Sair</button>
   </div>
 
@@ -309,8 +339,8 @@
     <div class="bh">
       <div class="bn" id="liNum">BLOCO 1</div>
       <div class="bt" id="liNome">—</div>
-      <div class="bo" id="liNota"></div>
     </div>
+    <div class="bv" id="liVoltas"></div>
     <ul class="bigL" id="liList"></ul>
   </div>
 
@@ -366,6 +396,7 @@
     <div><span>Reiniciar o timer do bloco</span><b>R</b></div>
     <div><span>Voltar 30 segundos</span><b>T</b></div>
     <div><span>Tela cheia</span><b>F</b></div>
+    <div><span>Cronômetro (espaço inicia/para)</span><b>C</b></div>
     <div><span>Voltar ao editor</span><b>ESC ESC</b></div>
     <div><span>Fechar esta ajuda</span><b>H</b></div>
     <div style="border:0;padding-top:16px;color:#8A8378;font-size:15px;display:block">
@@ -1093,23 +1124,43 @@
       var tp=b.tipo==='intervalo'?(b.work+'s / '+b.rest+'s · '+b.itens.length+' estações')
             :(b.tipo==='cronometro'?('Regressivo · '+b.dur+' min'):(b.itens.length+' exercícios'));
       return '<li><span class="n">'+String(i+1).padStart(2,'0')+'</span><span class="mv">'+
-             esc(b.nome||'—')+'</span><span class="mt">'+esc(tp)+'</span></li>';
+             esc(nomeBloco(b.nome)||'—')+'</span><span class="mt">'+esc(tp)+'</span></li>';
     }).join('');
     coube($('#ovL'),fit(T.blocos,24,3.1,1.8),'--ov',1.8);
     fimBloco=false;tela.classList.remove('pausado');htm(E.pips,'');
   }
+  // "B2 · Cadência" → "Cadência": o numero do bloco ja' aparece em "BLOCO 2"
+  function nomeBloco(n){ return String(n==null?'':n).replace(/^\s*B\s*\d+\s*[·•\-–—:.|]\s*/i,'').trim() }
+  // Voltas: se TODAS as reps do bloco comecam com o mesmo "3-4 x", tira de cada linha e mostra uma vez so'.
+  // b.voltas (opcional) tem prioridade. Os dados salvos nao mudam.
+  var RE_VOLTAS=/^\s*(\d+(?:\s*[-–]\s*\d+)?)\s*[xX×]\s*/;
+  function voltasDe(b){
+    var its=b.itens||[];
+    if(b.voltas!=null&&String(b.voltas).trim()) return {v:String(b.voltas).trim(),itens:its};
+    var v=null,com=0;
+    for(var i=0;i<its.length;i++){
+      var r=String(its[i].reps==null?'':its[i].reps).trim(); if(!r) continue;
+      var m=RE_VOLTAS.exec(r); if(!m) return {v:'',itens:its};
+      var x=m[1].replace(/\s/g,'').replace('–','-');
+      if(v===null) v=x; else if(v!==x) return {v:'',itens:its};
+      com++;
+    }
+    if(!com) return {v:'',itens:its};
+    return {v:v,itens:its.map(function(it){ return {nome:it.nome,reps:String(it.reps==null?'':it.reps).replace(RE_VOLTAS,'')} })};
+  }
   function lista(b){
     view='lista';tone('light');show('scLi');
     $('#liNum').textContent='BLOCO '+(bi+1);
-    $('#liNome').textContent=b.nome||'—';
-    $('#liNota').textContent=b.nota||'';
-    $('#liList').innerHTML=b.itens.map(function(it,i){return row(it,i)}).join('');
-    coube($('#liList'),fit(b.itens,30,5.6,2.4),'--mv',2.4);
+    $('#liNome').textContent=nomeBloco(b.nome)||'—';
+    var vo=voltasDe(b);
+    $('#liVoltas').textContent=vo.v?('Voltas '+vo.v):'';
+    $('#liList').innerHTML=vo.itens.map(function(it,i){return row(it,i)}).join('');
+    coube($('#liList'),fit(vo.itens,30,5.6,2.4),'--mv',2.4);
     fimBloco=false;tela.classList.remove('pausado');htm(E.pips,'');
   }
   function shellTimer(b){
     view=b.tipo;show('scTm');tone('light');
-    $('#tmT').textContent='Bloco '+(bi+1)+' · '+(b.nome||'')+' · '+
+    $('#tmT').textContent='Bloco '+(bi+1)+' · '+nomeBloco(b.nome)+' · '+
       (b.tipo==='intervalo'?(b.work+'s / '+b.rest+'s'):(b.dur+' min'));
     $('#tmL').innerHTML=b.itens.map(function(it,i){return row(it,i)}).join('');
     E.tmL._v=null; E.tmL._idx=-1; E.tmL.scrollTop=0;
@@ -1215,8 +1266,15 @@
 
   // R1. agenda o proximo frame ANTES de desenhar: uma excecao nunca mais congela o timer
   var erroLoop='';
+  // ---- cronometro avulso (conta pra cima). Independe do timer do bloco.
+  var cronOn=false,cronRun=false,cronT0=0,cronEl=null;
+  function cronTexto(s){ s=Math.max(0,Math.floor(s)); return pad(s/60)+':'+pad(s%60) }
+  function abreCrono(){ if(cronOn) return; cronOn=true; cronRun=false; txt($('#cronD'),'00:00'); tela.classList.add('cron-on'); tela.classList.remove('cron-run') }
+  function iniciaCrono(){ if(!cronOn) abreCrono(); cronRun=true; cronT0=mono(); tela.classList.add('cron-run') }
+  function fechaCrono(){ cronOn=false; cronRun=false; tela.classList.remove('cron-on','cron-run') }   // parar = some e volta o treino
   function loop(){
     requestAnimationFrame(loop);
+    if(cronRun){ try{ txt(cronEl||(cronEl=$('#cronD')),cronTexto((mono()-cronT0)/1000)) }catch(e){} }
     if(view!=='intervalo'&&view!=='cronometro') return;
     try{
       if(rodando) t=(mono()-origem)/1000;
@@ -1253,7 +1311,7 @@
     espera(false);
   }
   function editar(){
-    soltarTela();
+    soltarTela(); fechaCrono();
     view='espera'; fimBloco=false; tela.classList.remove('pausado');   // R1/R10: loop para de desenhar
     tela.classList.remove('on');
     $('#editor').classList.add('on');
@@ -1273,6 +1331,14 @@
     mostraCtrl(false);   // usou o teclado: some com a barra do mouse
     // R4. tecla segurada (auto-repeat) nao sai da tela nem pula varios blocos
     if(e.repeat&&(k==='Escape'||k==='ArrowRight'||k==='ArrowLeft'||k==='PageDown'||k==='PageUp')){ e.preventDefault(); return }
+    // cronometro aberto: ele manda. Espaco = inicia/para; Esc ou C = fecha. Setas nao mexem no treino por baixo.
+    if(cronOn){
+      e.preventDefault();
+      if(k===' '){ if(cronRun) fechaCrono(); else iniciaCrono() }
+      else if(k==='Escape'||k==='c'||k==='C') fechaCrono();
+      return;
+    }
+    if(k==='c'||k==='C'){ e.preventDefault(); abreCrono(); return }
     // R3. espaco so' pausa onde ha' timer correndo
     if(k===' '){e.preventDefault(); acaoPlay()}
     // sair de um bloco com timer em andamento pede confirmacao: dois toques (o apresentador sem fio nao clica em OK)
@@ -1314,9 +1380,15 @@
     else if(a==='play') acaoPlay();
     else if(a==='cheia') acaoTelaCheia();
     else if(a==='sair') acaoSair('Clique de novo para sair');
+    else if(a==='crono') abreCrono();
     mostraCtrl(true);
   });
   $('#ajuda').onclick=function(){this.classList.remove('on')};
+  $('#cron').addEventListener('click',function(e){
+    var b=e.target.closest('button'); if(!b) return;
+    b.blur();
+    if(b.dataset.c==='play') iniciaCrono(); else fechaCrono();
+  });
 
   var escEm=0,tmAviso=0;
   function aviso(txt){
