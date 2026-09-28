@@ -337,7 +337,8 @@
     <div class="nvG">
       <div><label>URL do projeto Supabase</label><input id="nvUrl" placeholder="https://xxxx.supabase.co" autocomplete="off" spellcheck="false"></div>
       <div><label>Chave anon (pública)</label><input id="nvAnon" autocomplete="off" spellcheck="false"></div>
-      <div class="row"><button id="nvSalvarCfg">Salvar conexão</button></div>
+      <div class="row"><button id="nvSalvarCfg">Salvar conexão</button><button class="del" id="nvLink">Copiar link de acesso</button></div>
+      <p class="hint">Mande o link de acesso aos professores (WhatsApp): quem abre já entra conectado, sem digitar a chave.</p>
     </div>
     <div class="nvG">
       <p class="hint" id="nvSemCfg">Salve a conexão para entrar.</p>
@@ -702,10 +703,12 @@
   // ---------- nuvem: Supabase por fetch puro (sem SDK, sem CDN) ----------
   // Regras em docs/CONTRATO.md. Nada aqui pode quebrar editor nem apresentacao:
   // toda falha vira texto no indicador, nunca alerta, nunca excecao solta.
-  function limpaUrl(u){ return String(u==null?'':u).trim().replace(/\/+$/,'') }
+  // chave e URL nunca tem espaco: o celular costuma inserir espaco/quebra de linha ao colar
+  function semEspaco(v){ return String(v==null?'':v).replace(/\s+/g,'') }
+  function limpaUrl(u){ return semEspaco(u).replace(/\/+$/,'') }
   function lerCfg(o){
     if(!o||typeof o!=='object') return null;
-    var u=limpaUrl(o.url),a=String(o.anon==null?'':o.anon).trim();
+    var u=limpaUrl(o.url),a=semEspaco(o.anon);
     return (/^https?:\/\/[^\s\/?#]+$/i.test(u)&&a)?{url:u,anon:a}:null;
   }
   function lerSess(o){
@@ -957,7 +960,7 @@
   $('#nvFechar').onclick=fechaNuvem;
   $('#nuvem').addEventListener('mousedown',function(e){ if(e.target===this) fechaNuvem() });
   $('#nvSalvarCfg').onclick=function(){
-    var u=limpaUrl($('#nvUrl').value),a=$('#nvAnon').value.trim(),c;
+    var u=limpaUrl($('#nvUrl').value),a=semEspaco($('#nvAnon').value),c;
     if(!u&&!a){
       cfg=null; sair(); nv.sessExp=false; nv.erro=''; nv.offline=false;
       try{ localStorage.removeItem(KCFG) }catch(e){}
@@ -1334,6 +1337,35 @@
     if(view!=='intervalo'&&view!=='cronometro') return;
     pronto=false; fimBloco=false; rodando=true; setT(novo); tela.classList.remove('pausado');
   }
+
+  // ---- link de acesso: #nuvem=<url+chave> — ninguem precisa digitar a chave (no celular ela se corrompe facil).
+  // Vai no fragmento (#), que o navegador nao envia a servidor nenhum. A chave e' a publica (anon/publishable).
+  var SITE='https://jeankoscheck.github.io/tela-do-ct/';
+  function b64u(s){ return btoa(unescape(encodeURIComponent(s))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'') }
+  function unb64u(s){ s=s.replace(/-/g,'+').replace(/_/g,'/'); while(s.length%4) s+='='; return decodeURIComponent(escape(atob(s))) }
+  function linkAcesso(){
+    if(!cfg) return '';
+    var base=location.protocol==='file:'?SITE:(location.origin+location.pathname);
+    return base+'#nuvem='+b64u(JSON.stringify({url:cfg.url,anon:cfg.anon}));
+  }
+  $('#nvLink').onclick=function(){
+    var l=linkAcesso();
+    if(!l){ msgNv('Salve a conexão primeiro (URL e chave), depois copie o link.'); return; }
+    var ok=function(){ msgNv('Link copiado. Cole no WhatsApp e mande para os professores.') };
+    try{ navigator.clipboard.writeText(l).then(ok,function(){ window.prompt('Copie o link:',l) }) }
+    catch(e){ window.prompt('Copie o link:',l) }
+  };
+  (function(){
+    var m=/^#nuvem=([A-Za-z0-9_-]+)$/.exec(location.hash||'');
+    if(!m) return;
+    try{ history.replaceState(null,'',location.pathname+location.search) }catch(e){}   // tira a chave da barra de endereco
+    try{
+      var j=JSON.parse(unb64u(m[1]));
+      $('#nvUrl').value=j.url||''; $('#nvAnon').value=j.anon||'';
+      $('#nvSalvarCfg').onclick();   // mesma logica do botao Salvar (troca de projeto, sincroniza)
+      msgNv('Conectado pelo link de acesso.');
+    }catch(e){ msgNv('Link de acesso inválido. Peça um novo ao coordenador.') }
+  })();
 
   // ganchos de teste (so' leitura) para o QA
   window.__matilha={
