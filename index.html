@@ -452,7 +452,7 @@
         return {nome:String(it.nome==null?'':it.nome),reps:String(it.reps==null?'':it.reps)};
       }):[];
       if(!itens.length) itens=[{nome:'',reps:''}];
-      return {nome:String(b.nome==null?'Bloco':b.nome),tipo:tipo,nota:String(b.nota==null?'':b.nota),
+      return {nome:String(b.nome==null?'Bloco':b.nome),tipo:tipo,nota:String(b.nota==null?'':b.nota),voltas:String(b.voltas==null?'':b.voltas).trim(),
               prep:num(b.prep,10,0),work:num(b.work,20,1),rest:num(b.rest,10,0),dur:num(b.dur,12,1),itens:itens};
     });
     return {foco:String(o.foco==null?'':o.foco),sub:String(o.sub==null?'':o.sub),blocos:blocos};
@@ -599,6 +599,7 @@
             opt('lista','Sem timer',b.tipo)+opt('intervalo','Circuito por tempo',b.tipo)+opt('cronometro','Regressivo / AMRAP',b.tipo)+
           '</select></div>'+
           '<div class="grow"><label>Observação</label><input data-k="nota" data-b="'+i+'" value="'+esc(b.nota||'')+'"></div>'+
+          '<div style="width:96px"><label>Voltas</label><input data-k="voltas" data-b="'+i+'" value="'+esc(b.voltas||'')+'" placeholder="3-4"></div>'+
           '<button class="mini" data-mv="up" data-b="'+i+'" aria-label="Subir bloco '+(i+1)+'">↑</button>'+
           '<button class="mini" data-mv="dn" data-b="'+i+'" aria-label="Descer bloco '+(i+1)+'">↓</button>'+
           '<button class="mini del" data-rmb="'+i+'" aria-label="Remover bloco '+(i+1)+'">Remover</button>'+
@@ -653,7 +654,7 @@
     var b=T.blocos[+el.dataset.b];
     if(k==='inome') b.itens[+el.dataset.j].nome=el.value;
     else if(k==='ireps') b.itens[+el.dataset.j].reps=el.value;
-    else if(k==='nome'||k==='nota'||k==='tipo'){ b[k]=el.value; if(k==='tipo') renderEditor(); }
+    else if(k==='nome'||k==='nota'||k==='voltas'||k==='tipo'){ b[k]=el.value; if(k==='tipo') renderEditor(); }
     else{
       b[k]=Math.max((k==='work'||k==='dur')?1:0,Math.floor(+el.value)||0);
       var h=$('#blocos [data-est="'+el.dataset.b+'"]'); if(h) h.textContent=hintEst(b);   // R13
