@@ -1,0 +1,21 @@
+# Mantem o projeto Supabase do CT acordado: o plano gratis pausa depois de 7 dias sem atividade.
+# Faz uma leitura de 1 linha a cada 3 dias. So' le, nunca escreve nem apaga.
+# A chave publica fica no "Secret" SUPABASE_KEY (Settings > Secrets and variables > Actions).
+name: manter-supabase-vivo
+on:
+  schedule:
+    - cron: "17 9 */3 * *"
+  workflow_dispatch: {}
+permissions: {}
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Consulta leve ao Supabase
+        env:
+          URL: https://nihuqmonyfkochvsboiq.supabase.co
+          KEY: ${{ secrets.SUPABASE_KEY }}
+        run: |
+          code=$(curl -s -o /dev/null -w "%{http_code}" -H "apikey: $KEY" -H "Authorization: Bearer $KEY" "$URL/rest/v1/treinos?select=id&limit=1")
+          echo "Supabase respondeu: $code"
+          test "$code" = "200"
