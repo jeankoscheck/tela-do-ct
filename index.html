@@ -26,7 +26,7 @@
 <style>
   :root{--ink:#14120F;--bone:#EFE9DC;--stone:#8A8378;--ochre:#C9A227;--verde-ui:#3DA76B}
   *{box-sizing:border-box;margin:0;padding:0}
-  html,body{height:100%}
+  html,body{height:100%;height:100dvh}   /* dvh: a barra do Safari do celular nao corta a tela */
   body{
     background:var(--ink);color:var(--bone);
     font-family:'Barlow Condensed',system-ui,sans-serif;
@@ -134,6 +134,28 @@
   .cron{position:absolute;inset:0;z-index:4;display:none;align-items:center;justify-content:center;
     background:rgba(20,18,15,.35);backdrop-filter:blur(1.2cqw);-webkit-backdrop-filter:blur(1.2cqw)}
   #tela.cron-on .cron{display:flex}
+  /* celular / toque: barra maior, "gire o celular" em pe, painel de instalacao (iPhone nao tem tela cheia) */
+  @media (pointer:coarse){
+    .ctrl{bottom:2.2cqw;gap:1cqw;padding:1cqw;flex-wrap:wrap;justify-content:center;max-width:96cqw}
+    .ctrl button{font-size:max(1.7cqw,16px);min-height:44px;padding:max(1.1cqw,10px) max(1.8cqw,16px)}   /* 44 px: alvo de toque */
+    .aviso{font-size:max(1.8cqw,14px)}
+    .bar .hint{display:none}
+  }
+  #gire{position:absolute;inset:0;z-index:6;display:none;align-items:center;justify-content:center;flex-direction:column;
+    gap:14px;background:var(--ink);color:var(--bone);text-align:center;font-family:'Archivo',sans-serif;font-weight:900;font-size:26px}
+  #gire span{font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:19px;color:var(--stone)}
+  @media (pointer:coarse) and (orientation:portrait){ #tela.on #gire{display:flex} }
+  #instalar{position:fixed;inset:0;z-index:12;display:none;align-items:center;justify-content:center;padding:18px;background:rgba(9,8,6,.94)}
+  #instalar.on{display:flex}
+  #instalar .cx{max-width:460px;width:100%;color:var(--bone)}
+  #instalar h2{font-family:'Archivo',sans-serif;font-weight:900;font-size:26px;line-height:1.05;margin-bottom:6px}
+  #instalar h2 b{color:var(--verde-ui)}
+  #instalar .sub{color:var(--stone);font-size:18px;margin-bottom:14px}
+  #instalar ol{list-style:none;counter-reset:p;display:flex;flex-direction:column;gap:10px;margin-bottom:16px}
+  #instalar li{counter-increment:p;position:relative;padding-left:44px;font-size:20px;line-height:1.2;min-height:32px}
+  #instalar li::before{content:counter(p);position:absolute;left:0;top:0;width:30px;height:30px;border-radius:50%;background:var(--verde-ui);color:#08210F;
+    font-family:'Archivo',sans-serif;font-weight:900;font-size:16px;display:flex;align-items:center;justify-content:center}
+  #instalar .row button{font-size:17px;padding:11px 16px}
   .cronBox{width:66cqw;padding:2.6cqw 4cqw 3cqw;border-radius:1.6cqw;background:rgba(20,18,15,.92);color:var(--bone);
     text-align:center;transition:width .25s,background .25s,padding .25s}
   .cronL{font-size:1.9cqw;font-weight:700;letter-spacing:.3em;text-transform:uppercase;color:#4FC486}
@@ -186,7 +208,7 @@
     font-size:1.8cqw;font-weight:700;letter-spacing:.18em;text-transform:uppercase;
     color:var(--ochre);opacity:0;transition:opacity .15s;pointer-events:none;z-index:2}
   .aviso.on{opacity:1}
-  .ctrl{position:absolute;left:50%;bottom:1.2cqw;transform:translateX(-50%);display:flex;gap:.6cqw;
+  .ctrl{position:absolute;left:50%;bottom:1.2cqw;transform:translateX(-50%);width:max-content;max-width:96cqw;display:flex;gap:.6cqw;
     padding:.6cqw;border-radius:.8cqw;background:rgba(20,18,15,.88);z-index:3;
     opacity:0;pointer-events:none;transition:opacity .2s}
   .ctrl button{font-size:1.25cqw;padding:.6cqw 1.1cqw;border-color:rgba(239,233,220,.3);color:var(--bone)}
@@ -303,6 +325,7 @@
 <div id="tela" data-tone="dark">
   <div class="paused">Pausado</div>
   <div class="aviso" id="aviso"></div>
+  <div id="gire"><div>Gire o celular ↻</div><span>A Tela do CT é feita para ficar deitada</span></div>
   <div class="cron" id="cron" role="dialog" aria-label="Cronômetro">
     <div class="cronBox">
       <div class="cronL">Cronômetro</div>
@@ -320,6 +343,7 @@
     <button data-a="avancar" aria-label="Avançar">Avançar ▶</button>
     <button data-a="cheia" aria-label="Tela cheia">⛶ Tela cheia</button>
     <button data-a="crono" aria-label="Cronômetro">⏱ Cronômetro</button>
+    <button data-a="som" aria-label="Ligar ou desligar o som">🔊 Som</button>
     <button data-a="sair" aria-label="Sair para o editor">✕ Sair</button>
   </div>
 
@@ -393,6 +417,20 @@
     <div class="row"><button class="go" id="nvSync">Sincronizar agora</button><span class="hint" id="nvUlt"></span></div>
     <div class="hint" id="nvStM" style="margin-top:8px"></div>
     <div class="nvMsg" id="nvMsg" aria-live="polite"></div>
+    <div class="hint" id="nvVer" style="margin-top:6px"></div>
+  </div>
+</div>
+
+<div id="instalar" role="dialog" aria-modal="true" aria-labelledby="instTit">
+  <div class="cx">
+    <h2 id="instTit">Tela cheia no <b>iPhone</b></h2>
+    <p class="sub">O Safari do iPhone não deixa nenhum site abrir em tela cheia — é uma trava da Apple. O jeito é instalar o app, uma vez só:</p>
+    <ol>
+      <li>Toque em <b>Compartilhar</b> (o quadradinho com a seta ⬆︎, na barra do Safari)</li>
+      <li>Role e toque em <b>Adicionar à Tela de Início</b> e depois em <b>Adicionar</b></li>
+      <li>Abra pelo ícone <b>Tela do CT</b>, com o celular <b>deitado</b>. Sem barras.</li>
+    </ol>
+    <div class="row"><button class="go" id="instOk">Entendi, continuar assim</button><button class="del" id="instNunca">Não mostrar de novo</button></div>
   </div>
 </div>
 
@@ -406,6 +444,7 @@
     <div><span>Voltar 30 segundos</span><b>T</b></div>
     <div><span>Tela cheia</span><b>F</b></div>
     <div><span>Cronômetro (espaço inicia/para)</span><b>C</b></div>
+    <div><span>Som (bipes) liga/desliga</span><b>M</b></div>
     <div><span>Voltar ao editor</span><b>ESC ESC</b></div>
     <div><span>Fechar esta ajuda</span><b>H</b></div>
     <div style="border:0;padding-top:16px;color:#8A8378;font-size:15px;display:block">
@@ -565,7 +604,11 @@
     var el=document.getElementById('avisoDisco'); if(el) el.style.display=ok?'none':'';
   }
   function salvar(){ if(tmSalvar) clearTimeout(tmSalvar); tmSalvar=setTimeout(salvarJa,300); }
-  window.addEventListener('beforeunload',function(){ if(tmSalvar) salvarJa(); });
+  // grava o que ficou pendente ao sair. beforeunload nao e' confiavel no Safari do iPhone: pagehide/visibilitychange sao.
+  function gravaPendente(){ if(tmSalvar) salvarJa(); }
+  window.addEventListener('beforeunload',gravaPendente);
+  window.addEventListener('pagehide',gravaPendente);
+  document.addEventListener('visibilitychange',function(){ if(document.visibilityState==='hidden') gravaPendente(); });
 
   // toda edicao: marca pendente, grava local (300ms) e, se logado, agenda push (2s)
   function editou(){
@@ -1193,7 +1236,7 @@
     if(b.tipo==='intervalo') pips(b.itens.length,0); else htm(E.pips,'');
   }
   function comecar(){
-    pronto=false; fimBloco=false; rodando=true; setT(0); tela.classList.remove('pausado'); aviso('');
+    pronto=false; fimBloco=false; rodando=true; setT(0); tela.classList.remove('pausado'); aviso(''); zeraSom(0);
   }
   function semItens(b){
     pronto=false;
@@ -1203,6 +1246,45 @@
     htm(E.tmNw,'Nenhum exercício neste bloco');txt(E.tmNx,'→ próximo bloco');
     htm(E.tmL,'');htm(E.pips,'');
   }
+  // ---- SOM (Web Audio, sem arquivo). Sai pela TV via HDMI. Navegador so' libera audio depois do 1o toque/tecla.
+  //  curto (880 Hz): ultimos 3 s de cada fase · trabalha (1320 Hz, longo): comecou o trabalho
+  //  pausa (392 Hz, grave e longo): comecou a pausa · fim (660 Hz, duplo): acabou o bloco
+  var ctxSom=null,mudo=false,ultSinal='',faseSom='',somMudoAte=0;
+  mudo=(location.protocol!=='file:');                              // no link publico o som comeca desligado (M liga)
+  try{ var mm=localStorage.getItem('matilha_mudo'); if(mm!==null) mudo=(mm==='1') }catch(e){}
+  function destravaSom(){
+    try{
+      if(!ctxSom){ var AC=window.AudioContext||window.webkitAudioContext; if(AC) ctxSom=new AC(); }
+      if(ctxSom&&ctxSom.state==='suspended') ctxSom.resume();
+    }catch(e){}
+  }
+  ['keydown','pointerdown','click'].forEach(function(ev){ document.addEventListener(ev,destravaSom,true) });
+  function nota(freq,dur,vol,ini){
+    var o=ctxSom.createOscillator(),g=ctxSom.createGain(),t0=ctxSom.currentTime+(ini||0);
+    o.type='sine'; o.frequency.value=freq;
+    g.gain.setValueAtTime(0.0001,t0); g.gain.exponentialRampToValueAtTime(vol,t0+0.015); g.gain.exponentialRampToValueAtTime(0.0001,t0+dur);
+    o.connect(g); g.connect(ctxSom.destination); o.start(t0); o.stop(t0+dur+0.03);
+  }
+  function tocar(ev){
+    if(mudo||!ctxSom) return;
+    try{
+      if(ev==='curto') nota(880,.14,.5);
+      else if(ev==='trabalha') nota(1320,.7,.55);
+      else if(ev==='pausa') nota(392,.7,.55);
+      else if(ev==='fim'){ nota(660,.35,.55); nota(660,.55,.55,.45); }
+    }catch(e){}
+  }
+  // dispara uma vez por mudanca de estado; so' com o timer correndo e fora da janela de silencio (T/R)
+  function sinal(chave,ev){
+    if(chave===ultSinal) return; ultSinal=chave;
+    if(ev&&rodando&&!pronto&&mono()>=somMudoAte) tocar(ev);
+  }
+  function zeraSom(seg){ ultSinal=''; faseSom=''; somMudoAte=mono()+(seg||0)*1000; }
+  function alternaSom(){
+    mudo=!mudo; try{ localStorage.setItem('matilha_mudo',mudo?'1':'0') }catch(e){}
+    aviso(mudo?'Som desligado':'Som ligado',2500);
+    if(!mudo){ destravaSom(); tocar('curto') }
+  }
   function renderIntervalo(b){
     if(vazio(b)) return semItens(b);
     if(pronto) return renderPronto(b);
@@ -1211,6 +1293,7 @@
     if(r<b.prep){
       tone('prep');
       txt(E.tmPh,'Prepara');txt(E.tmDg,padc(b.prep-r));
+      sinal('p'+padc(b.prep-r),(b.prep-r)<=3?'curto':null);
       htm(E.tmNw,esc(b.itens[0].nome)+'<em>'+esc(b.itens[0].reps)+'</em>');
       txt(E.tmNx,'Começa em '+padc(b.prep-r)+'s');
       htm(E.tmL,b.itens.map(function(it,i){return row(it,i)}).join(''));
@@ -1219,6 +1302,7 @@
     r-=b.prep;slot=Math.floor(r/cycle);ins=r%cycle;idx=Math.min(slot,n-1);
     if(slot>=n||(slot===n-1&&ins>=b.work)){
       tone('dark');
+      sinal('fim','fim');                                                       // antes de pausar: som so' toca com o timer correndo
       if(!fimBloco){fimBloco=true;setT(fimIntervalo(b));setRodando(false)}   // R8: t = fim real
       txt(E.tmPh,'Fim do bloco');txt(E.tmDg,'00');
       htm(E.tmNw,'Bloco concluído');txt(E.tmNx,'→ próximo bloco');
@@ -1229,6 +1313,11 @@
     tone(work?'light':'dark');
     txt(E.tmPh,work?'Trabalha':'Pausa');
     txt(E.tmDg,padc(work?b.work-ins:cycle-ins));
+    (function(){
+      var f=(work?'w':'r')+idx,nova=(f!==faseSom),falta=Math.ceil(work?b.work-ins:cycle-ins);
+      faseSom=f;
+      sinal(f+':'+padc(falta),nova?(work?'trabalha':'pausa'):(falta<=3?'curto':null));
+    })();
     htm(E.tmNw,esc(b.itens[idx].nome)+'<em>'+esc(b.itens[idx].reps)+'</em>');
     txt(E.tmNx,idx+1<n?('Depois: '+(b.itens[idx+1].nome||'')):'Último exercício');
     htm(E.tmL,b.itens.map(function(it,i){return row(it,i,i<idx?'done':(i===idx?'on':''))}).join(''));
@@ -1243,13 +1332,20 @@
     if(t<b.prep){
       tone('prep');
       txt(E.tmPh,'Prepara');txt(E.tmDg,padc(b.prep-t));
+      sinal('p'+padc(b.prep-t),(b.prep-t)<=3?'curto':null);
     } else if(restante<=0){
       tone('dark');
+      sinal('fim','fim');
       if(!fimBloco){fimBloco=true;setT(b.prep+b.dur*60);setRodando(false)}   // R8: t = fim real
       txt(E.tmPh,'Tempo');txt(E.tmDg,'00:00');
     } else {
       tone('light');
       txt(E.tmPh,'Em andamento');txt(E.tmDg,mmss(restante));
+      (function(){
+        var nova=(faseSom!=='c'),falta=Math.ceil(restante);
+        faseSom='c';
+        sinal('c'+falta,nova?'trabalha':(falta<=3?'curto':null));
+      })();
     }
     htm(E.tmNw,esc(b.nome)+'<em>'+esc(b.nota)+'</em>');
     txt(E.tmNx,'Conta as voltas');
@@ -1261,7 +1357,7 @@
     if(i<0){overview();return}
     if(i>=T.blocos.length){espera(true);return}
     var b=T.blocos[i];
-    bi=i;fimBloco=false;pronto=b.tipo!=='lista';rodando=!pronto;setT(0);tela.classList.remove('pausado');
+    bi=i;fimBloco=false;pronto=b.tipo!=='lista';rodando=!pronto;setT(0);tela.classList.remove('pausado');zeraSom(0);
     if(b.tipo==='lista') lista(b); else shellTimer(b);
   }
   function avancar(){
@@ -1313,6 +1409,7 @@
 
   function apresentar(){
     if(tmSalvar) salvarJa();
+    if(deveOferecerInstalar()) mostraInstalar();   // iPhone sem tela cheia: explica o caminho antes de comecar
     desligaCiclo();                       // regra 5: nada sincroniza com a tela aberta
     fechaNuvem();
     segurarTela();
@@ -1343,6 +1440,7 @@
     mostraCtrl(false);   // usou o teclado: some com a barra do mouse
     // R4. tecla segurada (auto-repeat) nao sai da tela nem pula varios blocos
     if(e.repeat&&(k==='Escape'||k==='ArrowRight'||k==='ArrowLeft'||k==='PageDown'||k==='PageUp')){ e.preventDefault(); return }
+    if(k==='m'||k==='M'){ e.preventDefault(); alternaSom(); return }
     // cronometro aberto: ele manda. Espaco = inicia/para; Esc ou C = fecha. Setas nao mexem no treino por baixo.
     if(cronOn){
       e.preventDefault();
@@ -1368,6 +1466,18 @@
     }
   });
   function acaoPlay(){ if(view==='intervalo'||view==='cronometro'){ if(pronto) comecar(); else if(!fimBloco) setRodando(!rodando) } }
+  var VERSAO='29/09/2026 · 4';
+  var semTelaCheia=!(document.documentElement.requestFullscreen||document.documentElement.webkitRequestFullscreen);
+  var toque=!!(window.matchMedia&&matchMedia('(pointer:coarse)').matches);
+  function mostraInstalar(){ $('#instalar').classList.add('on') }
+  function fechaInstalar(nunca){
+    $('#instalar').classList.remove('on');
+    try{ sessionStorage.setItem('matilha_inst_visto','1'); if(nunca) localStorage.setItem('matilha_inst_nunca','1') }catch(e){}
+  }
+  function deveOferecerInstalar(){
+    if(!toque||!semTelaCheia||instalado()) return false;
+    try{ return !localStorage.getItem('matilha_inst_nunca')&&!sessionStorage.getItem('matilha_inst_visto') }catch(e){ return true }
+  }
   function instalado(){ return !!(navigator.standalone||(window.matchMedia&&matchMedia('(display-mode: standalone), (display-mode: fullscreen)').matches)) }
   function acaoTelaCheia(){
     var d=document,el=d.documentElement,dentro=d.fullscreenElement||d.webkitFullscreenElement;
@@ -1377,7 +1487,7 @@
       if(ir){ var r=ir.call(el); if(r&&r.catch) r.catch(function(){}); return }
     }catch(e){}
     // iPhone: o Safari nao tem tela cheia para sites
-    aviso(instalado()?'Gire o celular (paisagem)':'iPhone: Compartilhar → Adicionar à Tela de Início',6000);
+    if(instalado()) aviso('Gire o celular (paisagem)',4000); else mostraInstalar();
   }
   function acaoSair(msg){
     if(Date.now()-escEm<1600){ escEm=0; aviso(''); editar(); }
@@ -1387,12 +1497,13 @@
   // Barra de controle pelo mouse: aparece ao mexer o mouse sobre a tela, some em 3 s (junto com o cursor).
   // Mesmas regras do teclado: confirmacao em bloco rodando, dois cliques para sair.
   var tmCtrl=0;
-  function mostraCtrl(on){
+  function mostraCtrl(on,ms){
     tela.classList.toggle('mouse',!!on);
     if(tmCtrl) clearTimeout(tmCtrl);
-    if(on) tmCtrl=setTimeout(function(){ tela.classList.remove('mouse') },3000);
+    if(on) tmCtrl=setTimeout(function(){ tela.classList.remove('mouse') },ms||3000);
   }
   tela.addEventListener('mousemove',function(){ mostraCtrl(true) });
+  tela.addEventListener('pointerdown',function(e){ if(e.pointerType==='touch') mostraCtrl(true,6000) });   // celular: toque na tela abre os botoes
   $('#ctrl').addEventListener('click',function(e){
     var b=e.target.closest('button'); if(!b) return;
     b.blur();   // senao o espaco 'clica' de novo no botao focado
@@ -1403,9 +1514,13 @@
     else if(a==='cheia') acaoTelaCheia();
     else if(a==='sair') acaoSair('Clique de novo para sair');
     else if(a==='crono') abreCrono();
+    else if(a==='som') alternaSom();
     mostraCtrl(true);
   });
   $('#ajuda').onclick=function(){this.classList.remove('on')};
+  $('#instOk').onclick=function(){ fechaInstalar(false) };
+  $('#instNunca').onclick=function(){ fechaInstalar(true) };
+  $('#nvVer').textContent='Versão '+VERSAO;
   $('#cron').addEventListener('click',function(e){
     var b=e.target.closest('button'); if(!b) return;
     b.blur();
@@ -1429,7 +1544,7 @@
   }
   function retomar(novo){
     if(view!=='intervalo'&&view!=='cronometro') return;
-    pronto=false; fimBloco=false; rodando=true; setT(novo); tela.classList.remove('pausado');
+    pronto=false; fimBloco=false; rodando=true; setT(novo); tela.classList.remove('pausado'); zeraSom(0.6);   // T/R nao dispara bipe atrasado
   }
 
   // ---- link de acesso: #nuvem=<url+chave> — ninguem precisa digitar a chave (no celular ela se corrompe facil).
@@ -1452,7 +1567,7 @@
   (function(){
     var m=/^#nuvem=([A-Za-z0-9_-]+)$/.exec(location.hash||'');
     if(!m) return;
-    try{ history.replaceState(null,'',location.pathname+location.search) }catch(e){}   // tira a chave da barra de endereco
+    if(!(toque&&semTelaCheia&&!instalado())){ try{ history.replaceState(null,'',location.pathname+location.search) }catch(e){} }   // tira a chave da barra; no iPhone fica, para 'Adicionar a Tela de Inicio' guardar o acesso
     try{
       var j=JSON.parse(unb64u(m[1]));
       $('#nvUrl').value=j.url||''; $('#nvAnon').value=j.anon||'';
