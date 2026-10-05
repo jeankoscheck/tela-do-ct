@@ -1189,18 +1189,24 @@
   // Voltas: se TODAS as reps do bloco comecam com o mesmo "3-4 x", tira de cada linha e mostra uma vez so'.
   // b.voltas (opcional) tem prioridade. Os dados salvos nao mudam.
   var RE_VOLTAS=/^\s*(\d+(?:\s*[-–]\s*\d+)?)\s*[xX×]\s*/;
+  // ultimo recurso: "3 voltas", "4 séries", "3-4 rounds" escrito na observacao (o treinador as vezes poe la')
+  var RE_VOLTAS_NOTA=/(\d+(?:\s*[-–a]\s*\d+)?)\s*(voltas?|s[ée]ries?|rounds?|sets?)\b/i;
+  function voltasDaNota(b,its){
+    var m=RE_VOLTAS_NOTA.exec(String(b.nota||''));
+    return {v:m?m[1].replace(/–/g,'-').replace(/\s*a\s*/,'-').replace(/\s/g,''):'',itens:its};
+  }
   function voltasDe(b){
     var its=b.itens||[];
     if(b.voltas!=null&&String(b.voltas).trim()) return {v:String(b.voltas).trim(),itens:its};
     var v=null,com=0;
     for(var i=0;i<its.length;i++){
       var r=String(its[i].reps==null?'':its[i].reps).trim(); if(!r) continue;
-      var m=RE_VOLTAS.exec(r); if(!m) return {v:'',itens:its};
+      var m=RE_VOLTAS.exec(r); if(!m) return voltasDaNota(b,its);
       var x=m[1].replace(/\s/g,'').replace('–','-');
-      if(v===null) v=x; else if(v!==x) return {v:'',itens:its};
+      if(v===null) v=x; else if(v!==x) return voltasDaNota(b,its);
       com++;
     }
-    if(!com) return {v:'',itens:its};
+    if(!com) return voltasDaNota(b,its);
     return {v:v,itens:its.map(function(it){ return {nome:it.nome,reps:String(it.reps==null?'':it.reps).replace(RE_VOLTAS,'')} })};
   }
   function lista(b){
@@ -1466,7 +1472,7 @@
     }
   });
   function acaoPlay(){ if(view==='intervalo'||view==='cronometro'){ if(pronto) comecar(); else if(!fimBloco) setRodando(!rodando) } }
-  var VERSAO='29/09/2026 · 4';
+  var VERSAO='05/10/2026 · 5';
   var semTelaCheia=!(document.documentElement.requestFullscreen||document.documentElement.webkitRequestFullscreen);
   var toque=!!(window.matchMedia&&matchMedia('(pointer:coarse)').matches);
   function mostraInstalar(){ $('#instalar').classList.add('on') }
